@@ -1,0 +1,90 @@
+ODOO 18 TEST/QA K8s DEPLOYMENT GUIDE
+====================================
+
+1. SET THE CORRECT NAMESPACE
+----------------------------
+Make sure you're in the correct namespace before proceeding:
+
+    kubectl config set-context --current --namespace=gaqsa-odoo18-test
+
+2. CREATE BACKUP PV & PVC
+--------------------------
+Apply the persistent volume and volume claim for backups:
+
+    kubectl apply -f helm/deploy/backup-pv-test.yml
+    kubectl apply -f helm/deploy/backup-pvc-test.yml
+
+3. INSTALL THE HELM CHART
+-------------------------
+Run from the project root or wherever your Helm charts are:
+
+    helm upgrade --install odoo -f helm/odoo/values.test.yaml helm/odoo
+
+4. RETRIEVE ADMIN PASSWORD
+--------------------------
+Once deployed, retrieve the admin password:
+
+    echo Password: $(kubectl get secret --namespace gaqsa-odoo18-test odoo -o jsonpath="{.data.odoo-admin-user-password}" | base64 --decode)
+
+5. CHECK PODS
+-------------
+Check that all pods are running:
+
+    kubectl get pods
+
+6. OPTIONAL: EDIT EXTERNAL DB SECRET
+------------------------------------
+If needed, update database credentials:
+
+    kubectl edit secret odoo-externaldb
+
+Then restart the deployment:
+
+    kubectl rollout restart deploy odoo
+
+----------------------
+______________________
+
+----------------------
+
+7. RESTORE FROM BACKUP
+----------------------
+This goes AFTER production is set.
+
+Create a restore job:
+
+    kubectl create job odoo-restore-20250603-1530 --from=cronjob/odoo-restore -n gaqsa-odoo18-test
+
+If it fails due to missing directories, enter the Odoo pod:
+
+    kubectl exec -it <odoo-pod-name> -- /bin/bash
+
+Manually create the required directories:
+
+    mkdir -p /odoo/data/filestore/backup
+
+Then retry the restore job:
+
+    kubectl create job odoo-restore-20250603-1530 --from=cronjob/odoo-restore -n gaqsa-odoo18-test
+
+8. CLEANUP BACKUP DB MARKERS
+----------------------------
+Once restore is running, exec into pod and clean up the DB marker:
+
+    kubectl exec -it <odoo-pod-name> -- /bin/bash
+    psql -d backup
+    DELETE FROM MARABUNTA_VERSION WHERE NUMBER='setup';
+    \q
+
+9. ENABLE MIGRATION
+-------------------
+Set the following in the deployment (via `kubectl edit deploy odoo`):
+
+    APP_IMAGE_VERSION = <version_number>
+    MIGRATE = TRUE
+
+10. UNSUSPEND CRON JOB
+----------------------
+Edit the cronjob to set suspend to false:
+
+    kubectl edit cronjob odoo-restore

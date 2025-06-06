@@ -1,0 +1,39 @@
+Exec into the Odoo pod:
+docker exec -it <container id> /bin/bash
+
+Use pg_dump to backup the DB:
+pg_dump -f /odoo/data/db_backup.sql -d db_name
+
+Copy the dump file from the container to your local:
+docker cp <container id>:/odoo/data/db_backup.sql db_backup.sql
+
+Create a zip with the database filestore inside the odoo container:
+tar -czvf /odoo/data/filestore.tar.gz /odoo/data/filestore/master
+
+Copy the filestore zip from the container to your local:
+docker cp <container id>:/odoo/data/filestore.tar.gz filestore.tar.gz
+
+Use scp to copy the DB dump file and the filestore tar file to the server you want to load the backup on
+
+Copy the files into the odoo docker container with docker cp:
+docker cp filestore.tar.gz <container id>:/odoo/data/filestore.tar.gz
+docker cp db_backup.sql <container id>:/odoo/data/db_backup.sql
+
+Exec into the docker container for odoo:
+docker exec -it <container id> /bin/bash
+
+Extract the filestore to a folder in /odoo/data/filestore. The name of the folder should be whatever you want the odoo database name to be. 
+
+Use psql to load the dump file into a new db:
+createdb <new db name> && psql -f db_backup.sql -d <new db name>
+
+Run the following SQL queries on the new database copy to turn off emails and crons. Use psql to connect to the DB and then execute:
+psql -d <new db name>
+UPDATE ir_cron SET active = 'f';
+UPDATE ir_mail_server SET active = 'f';
+UPDATE fetchmail_server SET active = 'f';
+UPDATE ir_config_parameter SET value = 'null' WHERE key = 'database.uuid';
+
+Restart odoo:
+sudo docker compose down
+sudo docker compose up -d

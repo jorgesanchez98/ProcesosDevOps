@@ -1,0 +1,88 @@
+✅ Guide: Running Odoo 18 in a Virtual Environment on EC2
+
+📦 1. Install Dependencies
+sudo apt update && sudo apt install -y \
+  python3-pip \
+  python3.10-venv \
+  build-essential \
+  libpq-dev \
+  git \
+  libxml2-dev \
+  libxslt-dev \
+  libldap2-dev \
+  libsasl2-dev \
+  libssl-dev \
+  libjpeg-dev \
+  zlib1g-dev \
+  libffi-dev \
+  libmysqlclient-dev \
+  wkhtmltopdf
+
+🐍 2. Create and Activate Virtual Environment
+cd /home/ubuntu/odoo
+python3.10 -m venv venv
+source venv/bin/activate
+
+📥 3. Clone Odoo 18 Source Code
+git clone https://github.com/odoo/odoo.git --branch 18.0 --depth 1
+cd odoo
+
+📚 4. Install Python Requirements
+pip install wheel
+pip install -r requirements.txt
+
+⚙️ 5. Configure Odoo
+nano /home/ubuntu/odoo/debian/odoo.conf
+
+[options]
+admin_passwd = YOUR_ADMIN_PASSWORD
+db_host = False
+db_port = False
+db_user = ubuntu
+db_password = False
+addons_path = /home/ubuntu/odoo/addons,/home/ubuntu/enterprise
+list_db = True
+default_productivity_apps = True
+
+🛠 6. Create or Update systemd Service
+sudo nano /etc/systemd/system/odoo.service
+
+[Unit]
+Description=Odoo
+After=network.target postgresql.service
+
+[Service]
+Type=simple
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/home/ubuntu/odoo
+Environment="PATH=/home/ubuntu/odoo/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+ExecStart=/home/ubuntu/odoo/venv/bin/python3 /home/ubuntu/odoo/odoo-bin --config=/home/ubuntu/odoo/debian/odoo.conf
+Restart=always
+RestartSec=5s
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
+
+Reload systemd and restart:
+sudo systemctl daemon-reexec
+sudo systemctl daemon-reload
+sudo systemctl restart odoo
+sudo systemctl enable odoo
+
+🧪 7. Verify It's Running from the Virtual Environment
+ps -aux | grep odoo
+# Look for: /home/ubuntu/odoo/venv/bin/python3
+
+sudo systemctl status odoo
+
+📦 8. Installing Custom Odoo Addons
+source /home/ubuntu/odoo/venv/bin/activate
+pip install odoo-addon-partner-risk-insurance==18.0.1.0.1
+
+🧠 9. Important Notes
+- You didn’t install Odoo system-wide (`apt install odoo`)
+- All updates are scoped to the virtualenv
+- Your data will not be lost — database and config remain intact

@@ -1,0 +1,65 @@
+#local
+ssh ubuntu@[original]
+
+	#original
+	sudo docker ps
+	sudo docker exec -it [container_id_odoo] /bin/bash
+
+		#container_id_odoo
+		tar -czvf /tmp/filestore.tar.gz /odoo/data/filestore/[original_folder]	#Master if prod
+		exit
+
+	#original
+	sudo docker exec -it [container_id_postgres] /bin/bash
+
+		#postgres
+		psql -U odoo -l
+		pg_dump -U odoo -f /tmp/db_backup.sql -d [db_name]		#Probably Master as well if prod	
+		exit
+
+	#original
+	sudo docker cp [container_id_odoo]:/tmp/filestore.tar.gz /tmp/filestore.tar.gz
+	sudo docker cp [container_id_postgres]:/tmp/db_backup.sql /tmp/db_backup.sql
+	exit
+
+#local
+scp ubuntu@[original]:/tmp/filestore.tar.gz /tmp/
+scp ubuntu@[original]:/tmp/db_backup.sql /tmp/
+scp /tmp/db_backup.sql ubuntu@[target]:/tmp/
+scp /tmp/db_backup.sql ubuntu@[target]:/tmp/
+ssh ubuntu@[target]
+
+	#target
+	sudo docker ps
+	sudo docker cp /tmp/filestore.tar.gz [container_id_odoo]:/tmp/
+	sudo docker exec -it [container_id_odoo] /bin/bash
+
+		#container_id_odoo
+		tar -xzvf /tmp/filestore.tar.gz -C /odoo/data/filestore/[new_db_name] --strip-components=4
+		chown -R odoo:odoo /odoo/data/filestore/[new_db_name]
+		exit
+
+	#target
+	sudo docker cp /tmp/db_backup.sql [container_id_postgres]:/tmp/
+	sudo docker exec -it [container_id_postgres] /bin/bash
+
+		#postgres
+		createdb -U odoo [new_db_name]
+		psql -U odoo -d [new_db_name] -f /tmp/db_backup.sql
+		psql -U odoo -d [new_db_name]
+
+			#new_db (neutralize)
+			UPDATE ir_cron SET active = 'f';
+			UPDATE ir_mail_server SET active = 'f';
+			UPDATE fetchmail_server SET active = 'f';
+			UPDATE ir_config_parameter SET value = 'null' WHERE key = 'database.uuid';
+			exit
+
+		#postgres
+		exit
+	#target
+	sudo docker compose down
+	sudo docker compose up -d
+	sudo docker ps
+	sudo docker logs -f [container_id]
+	

@@ -1,0 +1,37 @@
+kubectl edit deploy odoo -n gaqsa-odoo
+
+kubectl get namespaces
+kubectl config set-context --current --namespace=gaqsa-odoo
+kubectl edit deploy odoo
+
+---------------------
+QA and TEST = {DBFILTER, PGDATABASE}
+QA = {APP_IMAGE_VERSION}
+PROD = SOLO IMAGEN!
+---------------------
+
+kubectl get pods
+kubectl logs -f odoo-5d8b65767d-p7ns5
+
+Resultado esperado en logs:
+
+2025-05-14 21:11:33,553 37 INFO master odoo.service.server: Hit CTRL-C again or send a second signal to force the shutdown. 
+2025-05-14 21:11:33,553 37 INFO master odoo.sql_db: ConnectionPool(used=0/count=0/max=64): Closed 1 connections  
+|> version 16.0.1.1.1: execute base post-operations
+|> version 16.0.1.1.1: /bin/sh -c "VERSION=16.0.1.1.1 anthem songs.environment::main"
+
+ 
+    Setup Admin User: 0.973s
+    Set Mail Server...
+    Set Mail Server: 0.000s
+    Set Ribbon...
+    Set Ribbon: 0.000s
+    Set in the database...
+    Set in the database: 0.005s
+Environment: 0.977s
+|> version 16.0.1.1.1: execute external post-operations
+|> version 16.0.1.1.1: done
+
+Post release config (If any)
+
+if it is a production release, the release PR needs to be merged on the repo and the release published

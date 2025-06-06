@@ -1,0 +1,63 @@
+Guide: Deploying Odoo 18 Production to Kubernetes
+
+1. MAKE SURE YOU'RE IN THE CORRECT NAMESPACE
+   kubectl config set-context --current --namespace=gaqsa-odoo18
+
+2. Apply Persistent Volume and Persistent Volume Claim for backups
+   kubectl apply -f helm/deploy/backup-pv-prod.yml
+   kubectl apply -f helm/deploy/backup-pvc-prod.yml
+
+3. Verify that the PV is created
+   kubectl get pv
+
+4. Install Odoo using Helm in the production namespace
+   helm upgrade --install odoo -f helm/odoo/values.production.yaml helm/odoo
+
+5. Check pod statuses
+   kubectl get pods
+   # Wait until redis and odoo pods are running
+
+6. Edit the external DB secret to add RDS password
+   kubectl edit secret odoo-externaldb
+   # (used an editor, secret was updated with correct RDS password)
+
+7. Restart the Odoo deployment to pick up the new DB secret
+   kubectl rollout restart deploy odoo
+
+8. Check that new Odoo pod is running
+   kubectl get pods
+
+9. Edit the backup cronjob to add volumeMounts and volumes
+   kubectl edit cronjob odoo-backup)
+   # (Added volumesMount and volumes tags, below terminationmessagepolicy and terminationgraceperiodseconds respectively)
+
+10. Add AWS credentials to the secret used by the backup job
+    kubectl edit secret backup-credentials
+    # (added AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY)
+
+11. Edit Horizontal Pod Autoscaler to set max replicas to 1
+    kubectl edit hpa
+    # (changed maxReplicas from 3 to 1)
+
+12. Enable migration in the Odoo deployment
+    kubectl edit deploy
+    # (set MIGRATION=True or equivalent setting in env vars)
+
+13. Check that Odoo is running with updated settings
+    kubectl get pods
+
+14. Trigger a one-time manual backup job from the cronjob
+    kubectl create job odoo-backup-20250603-1530 --from=cronjob/odoo-backup -n gaqsa-odoo18
+
+15. Monitor the backup job
+    kubectl get pods
+    kubectl logs -f odoo-backup-20250603-1530-<pod-name>
+    # Confirm logs show successful backup steps: rclone config, DB dump, upload, filestore sync
+
+16. Verify backup job completion
+    kubectl get pods
+    # Job should show STATUS: Completed
+
+17. Revert HPA max replicas to 3 if needed
+    kubectl edit hpa
+    # (change maxReplicas back to 3)

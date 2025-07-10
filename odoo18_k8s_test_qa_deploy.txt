@@ -73,7 +73,7 @@ Once restore is running, exec into pod and clean up the DB marker:
 
     kubectl exec -it <odoo-pod-name> -- /bin/bash
     psql -d backup
-    DELETE FROM MARABUNTA_VERSION WHERE NUMBER='setup';
+    	DELETE FROM MARABUNTA_VERSION WHERE NUMBER='setup';
     \q
 
 9. ENABLE MIGRATION

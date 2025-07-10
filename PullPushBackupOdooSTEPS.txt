@@ -6,6 +6,7 @@ ssh ubuntu@[original]
 	sudo docker exec -it [container_id_odoo] /bin/bash
 
 		#container_id_odoo
+		ls /odoo/data/filestore/
 		tar -czvf /tmp/filestore.tar.gz /odoo/data/filestore/[original_folder]	#Master if prod
 		exit
 

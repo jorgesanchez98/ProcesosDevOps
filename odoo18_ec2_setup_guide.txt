@@ -1,6 +1,6 @@
-✅ Guide: Running Odoo 18 in a Virtual Environment on EC2
+Guide: Running Odoo 18 in a Virtual Environment on EC2
 
-📦 1. Install Dependencies
+1. Install Dependencies
 sudo apt update && sudo apt install -y \
   python3-pip \
   python3.10-venv \
@@ -18,20 +18,20 @@ sudo apt update && sudo apt install -y \
   libmysqlclient-dev \
   wkhtmltopdf
 
-🐍 2. Create and Activate Virtual Environment
+2. Create and Activate Virtual Environment
 cd /home/ubuntu/odoo
 python3.10 -m venv venv
 source venv/bin/activate
 
-📥 3. Clone Odoo 18 Source Code
+3. Clone Odoo 18 Source Code
 git clone https://github.com/odoo/odoo.git --branch 18.0 --depth 1
 cd odoo
 
-📚 4. Install Python Requirements
+4. Install Python Requirements
 pip install wheel
 pip install -r requirements.txt
 
-⚙️ 5. Configure Odoo
+5. Configure Odoo
 nano /home/ubuntu/odoo/debian/odoo.conf
 
 [options]
@@ -44,7 +44,7 @@ addons_path = /home/ubuntu/odoo/addons,/home/ubuntu/enterprise
 list_db = True
 default_productivity_apps = True
 
-🛠 6. Create or Update systemd Service
+6. Create or Update systemd Service
 sudo nano /etc/systemd/system/odoo.service
 
 [Unit]
@@ -72,17 +72,17 @@ sudo systemctl daemon-reload
 sudo systemctl restart odoo
 sudo systemctl enable odoo
 
-🧪 7. Verify It's Running from the Virtual Environment
+7. Verify It's Running from the Virtual Environment
 ps -aux | grep odoo
 # Look for: /home/ubuntu/odoo/venv/bin/python3
 
 sudo systemctl status odoo
 
-📦 8. Installing Custom Odoo Addons
+8. Installing Custom Odoo Addons
 source /home/ubuntu/odoo/venv/bin/activate
 pip install odoo-addon-partner-risk-insurance==18.0.1.0.1
 
-🧠 9. Important Notes
+9. Important Notes
 - You didn’t install Odoo system-wide (`apt install odoo`)
 - All updates are scoped to the virtualenv
 - Your data will not be lost — database and config remain intact

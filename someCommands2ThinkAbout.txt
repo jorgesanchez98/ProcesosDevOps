@@ -1,36 +1,5 @@
- name: PGHOST
-            value: odoo-phase2-qa.c1qo6otu1vdu.us-east-1.rds.amazonaws.com
-          - name: PGPORT
-            value: "5432"
-          - name: PGUSER
-            value: odoo
-          - name: PGDATABASE
-            value: 16.0.2.4.5-rc1
-          - name: PGPASSWORD
-            valueFrom:
-              secretKeyRef:
-                key: db-password
-                name: odoo-externaldb = ZHN6aERLTThZTXgyeWVHajI= = dszhDKM8YMx2yeGj2
-
-marabunta \
-  --migration-file /odoo/migration.yml \
-  --database 16-0-2-4-5-rc1 \
-  --db-user odoo \
-  --db-password dszhDKM8YMx2yeGj2 \
-  --db-host odoo-phase2-qa.c1qo6otu1vdu.us-east-1.rds.amazonaws.com \
-  --mode setup
-  
-marabunta \
-  --migration-file /odoo/migration.yml \
-  --database 16.0.2.4.5-rc1 \
-  --db-user odoo \
-  --db-password dszhDKM8YMx2yeGj2 \
-  --db-host odoo-phase2-qa.c1qo6otu1vdu.us-east-1.rds.amazonaws.com \
-  --mode upgrade
-
-  
-  SELECT number FROM marabunta_version;
-  DELETE FROM marabunta_version WHERE number='16.0.2.4.5';
-  INSERT INTO marabunta_version (number,date_start,date_done) VALUES ('16.0.2.4.5','2025-02-04 23:40:00.536755','2025-02-04 23:40:24.571558');
-  SELECT pg_terminate_backend (pid) FROM pg_stat_activity WHERE datname = '16-0-2-4-5-rc1'; DROP DATABASE "16-0-2-4-5-rc1";
-  SELECT pg_terminate_backend (pid) FROM pg_stat_activity WHERE datname = '20250704'; DROP DATABASE "20250704";
+SELECT number FROM marabunta_version;
+DELETE FROM marabunta_version WHERE number='16.0.2.4.5';
+INSERT INTO marabunta_version (number,date_start,date_done) VALUES ('16.0.2.4.5','2025-02-04 23:40:00.536755','2025-02-04 23:40:24.571558');
+SELECT pg_terminate_backend (pid) FROM pg_stat_activity WHERE datname = '18-0-0-0-0'; DROP DATABASE "18-0-0-0-0";
+SELECT pg_terminate_backend (pid) FROM pg_stat_activity WHERE datname = '20250716'; DROP DATABASE "20250716";

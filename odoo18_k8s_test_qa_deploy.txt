@@ -1,11 +1,18 @@
 ODOO 18 TEST/QA K8s DEPLOYMENT GUIDE
 ====================================
 
+0. CREATE THE NAMESPACE
+------------------------
+Before anything else, make sure the namespace exists:
+
+    kubectl create namespace gaqsa-odoo18-test
+
 1. SET THE CORRECT NAMESPACE
 ----------------------------
 Make sure you're in the correct namespace before proceeding:
 
     kubectl config set-context --current --namespace=gaqsa-odoo18-test
+
 
 2. CREATE BACKUP PV & PVC
 --------------------------
@@ -14,10 +21,19 @@ Apply the persistent volume and volume claim for backups:
     kubectl apply -f helm/deploy/backup-pv-test.yml
     kubectl apply -f helm/deploy/backup-pvc-test.yml
 
+!!! PersistentVolume must have a unique name across the cluster.
+!!! PersistentVolumeClaim must specify the namespace and reference the created PV:
+    metadata:
+      namespace: gaqsa-odoo18-test
+    spec:
+      volumeName: <your-pv-name>
+
+
 3. INSTALL THE HELM CHART
 -------------------------
 Run from the project root or wherever your Helm charts are:
 
+    helm dependency update helm/odoo
     helm upgrade --install odoo -f helm/odoo/values.test.yaml helm/odoo
 
 4. RETRIEVE ADMIN PASSWORD
@@ -36,24 +52,42 @@ Check that all pods are running:
 ------------------------------------
 If needed, update database credentials:
 
+    echo -n 'password' | base64
     kubectl edit secret odoo-externaldb
 
 Then restart the deployment:
 
     kubectl rollout restart deploy odoo
 
-----------------------
-______________________
-
-----------------------
-
 7. RESTORE FROM BACKUP
 ----------------------
 This goes AFTER production is set.
+!!! Edit odoo-restore
 
+            terminationMessagePolicy: File
+            volumeMounts:
+            - mountPath: /odoo/data
+              name: odoo-data
+            - mountPath: /backup
+              name: odoo-backup
+          dnsPolicy: ClusterFirst
+          restartPolicy: Never
+          schedulerName: default-scheduler
+          securityContext: {}
+          terminationGracePeriodSeconds: 30
+          volumes:
+          - name: odoo-data
+            persistentVolumeClaim:
+              claimName: odoo
+          - name: odoo-backup
+            persistentVolumeClaim:
+              claimName: odoo-backup-pvc-test
+  schedule: 0 12 * * *
+
+!!! Also make sure PGHOST in odoo-restore is pointing towards the correct RDS
 Create a restore job:
 
-    kubectl create job odoo-restore-20250603-1530 --from=cronjob/odoo-restore -n gaqsa-odoo18-test
+    kubectl create job odoo-restore-20250729-1530 --from=cronjob/odoo-restore -n gaqsa-odoo18-test
 
 If it fails due to missing directories, enter the Odoo pod:
 
@@ -65,7 +99,7 @@ Manually create the required directories:
 
 Then retry the restore job:
 
-    kubectl create job odoo-restore-20250603-1530 --from=cronjob/odoo-restore -n gaqsa-odoo18-test
+    kubectl create job odoo-restore-20250729-1530 --from=cronjob/odoo-restore -n gaqsa-odoo18-test
 
 8. CLEANUP BACKUP DB MARKERS
 ----------------------------
@@ -73,7 +107,7 @@ Once restore is running, exec into pod and clean up the DB marker:
 
     kubectl exec -it <odoo-pod-name> -- /bin/bash
     psql -d backup
-    	DELETE FROM MARABUNTA_VERSION WHERE NUMBER='setup';
+        DELETE FROM MARABUNTA_VERSION WHERE NUMBER='setup';
     \q
 
 9. ENABLE MIGRATION

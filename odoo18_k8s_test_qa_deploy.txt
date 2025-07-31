@@ -28,6 +28,7 @@ Apply the persistent volume and volume claim for backups:
     spec:
       volumeName: <your-pv-name>
 
+Verify status is bound for these
 
 3. INSTALL THE HELM CHART
 -------------------------

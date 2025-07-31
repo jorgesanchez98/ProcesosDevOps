@@ -1,0 +1,61 @@
+# Install postgresql-client-15 in a minimal Ubuntu environment (e.g., Docker)
+
+This guide installs `postgresql-client-15` in a minimal Ubuntu-based container or system
+that lacks utilities like `sudo` or `lsb_release`.
+
+---
+
+## 🛠️ Step-by-Step Instructions
+
+### 1. Install `lsb-release` (if missing)
+
+```bash
+apt-get update
+apt-get install -y lsb-release && apt-get clean all
+```
+
+### 2. Add the PostgreSQL APT repository
+
+```bash
+echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list
+```
+
+### 3. Import the PostgreSQL signing key (avoid deprecated `apt-key`)
+
+```bash
+curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | gpg --dearmor |   tee /usr/share/keyrings/postgresql.gpg > /dev/null
+```
+
+Then modify the repo source to use the key:
+
+```bash
+echo "deb [signed-by=/usr/share/keyrings/postgresql.gpg] http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main"   > /etc/apt/sources.list.d/pgdg.list
+```
+
+### 4. Update package list
+
+```bash
+apt-get update
+```
+
+### 5. Install `postgresql-client-15`
+
+```bash
+apt-get install -y postgresql-client-15
+```
+
+### 6. (Optional) Confirm the correct version is used
+
+```bash
+pg_dump --version
+```
+
+Or use it directly:
+
+```bash
+/usr/lib/postgresql/15/bin/pg_dump --version
+```
+
+---
+
+✅ Done! You can now use `pg_dump` with a PostgreSQL 15 server.

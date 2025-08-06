@@ -1,0 +1,14 @@
+#!/bin/bash
+
+# Check if a namespace argument was provided
+if [ -z "$1" ]; then
+    echo "Usage: setns <namespace>"
+    exit 1
+fi
+
+# Assign the first argument to a variable
+NAMESPACE=$1
+
+# Run the kubectl command to set the namespace
+kubectl config set-context --current --namespace="$NAMESPACE"
+
